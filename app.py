@@ -72,9 +72,6 @@ def main():
             with open(f"{store_name}.pkl", "wb") as f:
                 pickle.dump(VectorStore, f)
 
-        embeddings = OpenAIEmbeddings()
-        VectorStore = FAISS.from_texts(chunks, embedding=embeddings)
- 
         # Accept user questions/query
         query = st.text_input("Ask questions about your PDF file:")
         # st.write(query)
