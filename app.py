@@ -1,11 +1,12 @@
 import streamlit as st
 import pickle
-from PyPDF2 import PdfReader
 from streamlit_extras.add_vertical_space import add_vertical_space
+from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.llms import OpenAI
+from langchain.memory import ConversationBufferMemory
 from langchain.chains.question_answering import load_qa_chain
 from langchain.callbacks import get_openai_callback
 import os
@@ -75,15 +76,17 @@ def main():
         # Accept user questions/query
         query = st.text_input("Ask questions about your PDF file:")
         # st.write(query)
+        memory=ConversationBufferMemory(memory_key="chat_history",input_key="question")
  
         if query:
             docs = VectorStore.similarity_search(query=query, k=3)
  
             llm = OpenAI()
-            chain = load_qa_chain(llm=llm, chain_type="stuff")
+            chain = load_qa_chain(llm=llm, chain_type="stuff",memory=memory)
             with get_openai_callback() as cb:
                 response = chain.run(input_documents=docs, question=query)
                 print(cb)
+                print(response)
             st.write(response)
  
 if __name__ == '__main__':
