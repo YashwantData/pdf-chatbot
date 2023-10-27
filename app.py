@@ -9,6 +9,7 @@ from langchain.llms import OpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains.question_answering import load_qa_chain
 from langchain.callbacks import get_openai_callback
+from langchain.chains import ConversationalRetrievalChain
 import os
 
 # Sidebar contents
@@ -70,24 +71,30 @@ def main():
         else:
             embeddings = OpenAIEmbeddings()
             VectorStore = FAISS.from_texts(chunks, embedding=embeddings)
-            with open(f"{store_name}.pkl", "wb") as f:
-                pickle.dump(VectorStore, f)
+            #with open(f"{store_name}.pkl", "wb") as f:
+                #pickle.dump(VectorStore, f)
 
         # Accept user questions/query
         query = st.text_input("Ask questions about your PDF file:")
         # st.write(query)
-        memory=ConversationBufferMemory(memory_key="chat_history",input_key="question")
+        memory=ConversationBufferMemory(memory_key="chat_history",return_messages=True)
  
         if query:
-            docs = VectorStore.similarity_search(query=query, k=3)
+            chat_history=[]
+            #docs = VectorStore.similarity_search(query=query, k=3)
  
-            llm = OpenAI()
-            chain = load_qa_chain(llm=llm, chain_type="stuff",memory=memory)
-            with get_openai_callback() as cb:
-                response = chain.run(input_documents=docs, question=query)
-                print(cb)
-                print(response)
-            st.write(response)
+            llm = OpenAI(temperature=0)
+            #chain = load_qa_chain(llm=llm, chain_type="stuff",memory=memory)
+            #with get_openai_callback() as cb:
+                #response = chain.run(input_documents=docs, question=query)
+                #print(cb)
+                #print(response)
+            #st.write(response)
+            qa=ConversationalRetrievalChain.from_llm(llm,VectorStore.as_retriever(),memory=memory)
+            response=qa({"question":query,"chat_history":chat_history})
+            st.write(response["answer"])
+            chat_history.append((query,response))
+            
  
 if __name__ == '__main__':
     main()
